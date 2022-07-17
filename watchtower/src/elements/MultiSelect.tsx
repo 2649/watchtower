@@ -1,4 +1,3 @@
-import Grid from "@mui/material/Grid";
 import OutlinedInput from "@mui/material/OutlinedInput";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
@@ -12,7 +11,7 @@ export interface multiSelectProps {
   onChange: (event: any) => void;
 }
 
-export default function ({
+export default function MultiSelect({
   options,
   values,
   onChange,

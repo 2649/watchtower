@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { updateSnackbar } from "../features/snackbarSlice";
 import Alert from "@mui/material/Alert";
 
-export default function () {
+export default function CustomSnackbar() {
   const snackbarState = useAppSelector(
     (state: RootState) => state.snackbar.value
   );

@@ -9,7 +9,11 @@ export interface dateTimePickerProps {
   title: string;
 }
 
-export default function ({ value, onChange, title }: dateTimePickerProps) {
+export default function CustomDateTimePicker({
+  value,
+  onChange,
+  title,
+}: dateTimePickerProps) {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <DateTimePicker

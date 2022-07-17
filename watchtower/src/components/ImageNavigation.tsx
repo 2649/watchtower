@@ -20,12 +20,12 @@ import { updateSnackbar } from "../features/snackbarSlice";
 import { updateHighlightState } from "../features/detectionsSlice";
 import { useEffect, useState } from "react";
 
-import ImageObject from "../types/imageType";
+import imageObject from "../types/imageType";
 import { updateQuery } from "../features/querySlice";
 import { intervalToDuration, sub } from "date-fns/esm";
 import { fetchResults } from "../utils/apiExecution";
 
-export default function () {
+export default function ImageNavigation() {
   const detections = useAppSelector(
     (state: RootState) => state.detections.values
   );
@@ -66,7 +66,7 @@ export default function () {
       const divisor = Math.floor(detections.length / 4);
 
       const splits = detections
-        .map((el: ImageObject, idx: number) => {
+        .map((el: imageObject, idx: number) => {
           if (
             (idx % divisor === 0 && idx) ||
             idx === detections.length - 1 ||
@@ -97,7 +97,7 @@ export default function () {
         "Failed to create marks. Most likely due to premature generation"
       );
     }
-  }, [detections]);
+  }, [detections, dispatch]);
 
   const updateHighlighted = () => {
     putHighlight(detections[selected])

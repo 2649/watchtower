@@ -1,6 +1,6 @@
 import detectionObject from "./detectionType";
 
-export default interface ImageObject {
+export default interface imageObject {
   src: string;
   highlight: boolean;
   id: number;
@@ -9,7 +9,7 @@ export default interface ImageObject {
   detections: detectionObject[];
 }
 
-export interface ImageObjectOptional {
+export interface mageObjectOptional {
   src?: string;
   highlight?: boolean;
   id?: number;

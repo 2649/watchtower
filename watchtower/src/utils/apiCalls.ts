@@ -1,5 +1,5 @@
 import axios from "axios";
-import ImageObject from "../types/imageType";
+import imageObject from "../types/imageType";
 import { queryOjectOptional } from "../types/queryType";
 
 console.log(`Using this process.env.PUBLIC_URL: ${process.env.PUBLIC_URL}`);
@@ -26,7 +26,7 @@ export const getImages = (query: queryOjectOptional) => {
   return axios.get(`${process.env.PUBLIC_URL}/images${parameterString}`);
 };
 
-export const putHighlight = (image: ImageObject) => {
+export const putHighlight = (image: imageObject) => {
   return axios.put(
     `${process.env.PUBLIC_URL}/highlight/${image.id}?highlight=${
       image.highlight ? "false" : "true"

@@ -7,7 +7,9 @@ import { updateSelectedByOne } from "../features/viewSlice";
 export default function ImageDisplay() {
   const dispatch = useAppDispatch();
   const selected = useAppSelector((state: RootState) => state.view.selected);
-  const value = useAppSelector((state: RootState) => state.detections.values);
+  const detections = useAppSelector(
+    (state: RootState) => state.detections.values
+  );
 
   const canvasWidth = window.innerWidth * 0.9;
   const canvasHeight = window.innerHeight * 0.68;
@@ -23,7 +25,11 @@ export default function ImageDisplay() {
   );
 
   useEffect(() => {
-    if (value.length > 0 && selected !== undefined && imageCanvas !== null) {
+    if (
+      detections.length > 0 &&
+      selected !== undefined &&
+      imageCanvas !== null
+    ) {
       const img = new Image();
       img.onload = (event: any) => {
         let newResizeSize;
@@ -50,7 +56,7 @@ export default function ImageDisplay() {
         ctx?.drawImage(img, 0, 0, newResizeSize[0], newResizeSize[1]);
         setImageSize(newResizeSize);
       };
-      img.src = value[selected]?.src;
+      img.src = detections[selected]?.src;
     } else {
       if (imageCanvas !== null) {
         const ctx = imageCanvas?.current.getContext("2d");
@@ -62,12 +68,12 @@ export default function ImageDisplay() {
         );
       }
     }
-  }, [selected, value, canvasWidth, canvasHeight]);
+  }, [selected, detections, canvasWidth, canvasHeight]);
 
   useEffect(() => {
     if (
       imageSize !== null &&
-      value.length > 0 &&
+      detections.length > 0 &&
       selected !== undefined &&
       annotationCanvas !== null
     ) {
@@ -85,7 +91,7 @@ export default function ImageDisplay() {
       //@ts-ignore
       ctx.strokeStyle = "#CB4C4E";
 
-      value[selected]?.detections.forEach((object: detectionObject) => {
+      detections[selected]?.detections.forEach((object: detectionObject) => {
         ctx?.beginPath();
 
         ctx?.rect(
@@ -123,7 +129,7 @@ export default function ImageDisplay() {
         );
       }
     }
-  }, [selected, value, imageSize]);
+  }, [selected, detections, imageSize]);
 
   function handleTouchStart(e: any) {
     setTouchStart(e.targetTouches[0].clientX);

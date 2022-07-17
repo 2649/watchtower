@@ -8,7 +8,7 @@ import queryOject from "../types/queryType";
 import { RootState } from "../app/store";
 import { updateQuery } from "../features/querySlice";
 import MultiSelect from "../elements/MultiSelect";
-import DateTimePicker from "../elements/DateTimePicker";
+import DateTimePicker from "../elements/CustomDateTimePicker";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
@@ -24,7 +24,7 @@ import { Container } from "@mui/system";
 import SearchIcon from "@mui/icons-material/Search";
 import { fetchQparams, fetchResults } from "../utils/apiExecution";
 
-export default function () {
+export default function QuerySelector() {
   const dispatch = useAppDispatch();
   const queryParams: queryParamsOptional = useAppSelector(
     (state: RootState) => state.queryParams.values
@@ -37,7 +37,7 @@ export default function () {
     createDummyData(dispatch);
 
     fetchQparams(dispatch);
-  }, []);
+  }, [dispatch]);
 
   return (
     <Container>

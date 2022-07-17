@@ -1,9 +1,8 @@
-import createDummyData from "./utils/dev_data";
 import QuerySelector from "./components/QuerySelector";
 import ImageNavigation from "./components/ImageNavigation";
 import ImageDisplay from "./components/ImageDisplay";
-import Snackbar from "./components/Snackbar";
-import { createTheme, ThemeProvider, styled } from "@mui/material/styles";
+import Snackbar from "./components/CustomSnackbarSnackbar";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 
 const theme = createTheme({
   spacing: 4,
