@@ -1,0 +1,9 @@
+flatbuffers==2.0
+greenlet==1.1.2
+numpy==1.23.1
+onnxruntime==1.11.1
+opencv-python==4.6.0.66
+Pillow==9.2.0
+protobuf==4.21.2
+psycopg2-binary==2.9.3
+SQLAlchemy==1.4.39

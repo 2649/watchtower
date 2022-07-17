@@ -1,0 +1,54 @@
+version: "3.9"
+# This compose file should not be called directly. It is part of the startup.sh script inthe same directory
+# Each camera should become a seperate runner container, that handles the http video stream
+# it is important that the images have the same path inside the container, bc the path is stored absolutetly in the database
+
+services:
+  runner1:
+    build: ./inference
+    environment:
+      ##################### This connection string is used for mobotix devices
+      WATCHTOWER_CAM_IP: http://<user>:<pw>@<ip-address>/control/faststream.jpg?stream=full&quality=80&fps=6&needlength
+      #####################
+      WATCHTOWER_MODEL_PATH: /models/yolov6s_1280_704.onnx
+      WATCHTOWER_CONFIDENCE: .3
+      WATCHTOWER_CAMERA_NAME: "test"
+      WATCHTOWER_STORAGE_PATH: "/images/"
+      WATCHTOWER_SQL_CONNECTION: "postgresql://postgres:dbpw@postgres:5432/postgres"
+    restart: always
+    depends_on:
+      - postgres
+    volumes:
+      - ./models/:/models/
+      ###### Add here your local image path
+      - "/media/laurenz/My Book/images:/images/"
+      ######################################
+    deploy:
+      resources:
+        limits:
+          cpus: 4
+  ##### Backend and Postgres
+  backend:
+    build: ./backend
+    environment:
+      WATCHTOWER_SQL_CONNECTION: "postgresql://postgres:dbpw@postgres:5432/postgres"
+    volumes:
+      ###### Add here your local image path
+      - "/media/laurenz/My Book/images:/images/"
+      ######################################
+    depends_on:
+      - postgres
+    ports: 
+      - 80:80
+  postgres:
+    image: postgres:13.7
+    ports: 
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: dbpw
+      POSTGRES_USER: postgres
+      PGDATA: /psql
+    volumes:
+    ###### Add here your local db path
+      - "/media/laurenz/My Book/db:/psql"
+    ######################################

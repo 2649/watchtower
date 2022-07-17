@@ -1,0 +1,18 @@
+version: "3.9"
+services:
+  ffmpeg:
+    image: jrottenberg/ffmpeg:5-scratch
+    entrypoint: ffmpeg -loop 1 -i /static/20220423_143238.jpg  -c:v mjpeg -f mjpeg -listen 1  http://0.0.0.0:8025/video.mjpg
+    restart: always
+    volumes:
+      - ./:/static/
+    ports: 
+      - 8025:8025
+  postgres:
+    image: postgres:13.7
+    ports: 
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: test
+      POSTGRES_USER: test
+      PGDATA: /psql
