@@ -1,6 +1,7 @@
 # Custom #
 docker-compose.secret.yaml
 .vscode
+*/.venv
 
 
 # Python template #
