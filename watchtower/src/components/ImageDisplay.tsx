@@ -35,14 +35,14 @@ export default function ImageDisplay() {
         let newResizeSize;
         newResizeSize = [
           event?.currentTarget?.width *
-            (canvasHeight / event?.currentTarget?.height),
+          (canvasHeight / event?.currentTarget?.height),
           canvasHeight,
         ];
         if (newResizeSize[0] > canvasWidth) {
           newResizeSize = [
             canvasWidth,
             event?.currentTarget?.height *
-              (canvasWidth / event?.currentTarget?.width),
+            (canvasWidth / event?.currentTarget?.width),
           ];
         }
 
@@ -53,7 +53,10 @@ export default function ImageDisplay() {
           imageCanvas.current.width,
           imageCanvas.current.height
         );
-        ctx?.drawImage(img, 0, 0, newResizeSize[0], newResizeSize[1]);
+        ctx?.drawImage(img,
+          Math.floor((imageCanvas.current.width - event?.currentTarget?.width) / 2),
+          Math.floor((imageCanvas.current.height - event?.currentTarget?.height) / 2),
+          newResizeSize[0], newResizeSize[1]);
         setImageSize(newResizeSize);
       };
       img.src = detections[selected]?.src;
@@ -95,16 +98,16 @@ export default function ImageDisplay() {
         ctx?.beginPath();
 
         ctx?.rect(
-          object.bbox[0] * imageSize[0],
-          object.bbox[1] * imageSize[1],
+          Math.floor((imageCanvas.current.width - imageSize[0]) / 2) + object.bbox[0] * imageSize[0],
+          Math.floor((imageCanvas.current.height - imageSize[1]) / 2) + object.bbox[1] * imageSize[1],
           object.bbox[2] * imageSize[0],
           object.bbox[3] * imageSize[1]
         );
         //@ts-ignore
         ctx.fillStyle = "#520202";
         ctx?.fillRect(
-          object.bbox[0] * imageSize[0],
-          (object.bbox[1] + object.bbox[3]) * imageSize[1],
+          Math.floor((imageCanvas.current.width - imageSize[0]) / 2) + object.bbox[0] * imageSize[0],
+          Math.floor((imageCanvas.current.height - imageSize[1]) / 2) + (object.bbox[1] + object.bbox[3]) * imageSize[1],
           object.bbox[2] * imageSize[0],
           -24
         );
@@ -113,8 +116,8 @@ export default function ImageDisplay() {
         ctx.fillStyle = "#fff";
         ctx?.fillText(
           `${object.className}(${Math.round(object.score * 100)}%)`,
-          object.bbox[0] * imageSize[0],
-          (object.bbox[1] + object.bbox[3]) * imageSize[1] - 5,
+          Math.floor((imageCanvas.current.width - imageSize[0]) / 2) + object.bbox[0] * imageSize[0],
+          Math.floor((imageCanvas.current.height - imageSize[1]) / 2) + (object.bbox[1] + object.bbox[3]) * imageSize[1] - 5,
           object.bbox[0] * imageSize[0]
         );
       });
