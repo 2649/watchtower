@@ -7,7 +7,7 @@ export PUBLIC_URL="$(ip route get 8.8.8.8 | sed -n '/src/{s/.*src *\([^ ]*\).*/\
 
 echo "deploy for ${curretnIP}"
 
-docker run --workdir="/watchtower" -v "./watchtower:/watchtower/" -it node:16 yarn build
+docker run --workdir="/watchtower" -v "$(pwd)/watchtower:/watchtower/" -it node:16 yarn build
 
 mkdir -p backend/watchtower
 
