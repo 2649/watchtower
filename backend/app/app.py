@@ -8,6 +8,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import RedirectResponse
 
+from .schemas import PydanticGetImages, PydanticGetQParams, PydanticPutHighlight
 from .dependencies import get_db
 from .tables import Base, Images, Objects, engine
 
@@ -33,7 +34,7 @@ async def index():
     return RedirectResponse(url="/index.html")
 
 
-@app.get("/images")
+@app.get("/images", response_model=List[PydanticGetImages])
 def get_images(
     camera: Union[List[str], None] = Query(default=None),
     object: Union[List[str], None] = Query(default=None),
@@ -91,7 +92,7 @@ def get_images(
         raise HTTPException(500, str(e))
 
 
-@app.put("/highlight/{imageid}")
+@app.put("/highlight/{imageid}", response_model=PydanticPutHighlight)
 def put_image(imageid: int, highlight: bool, db=Depends(get_db)):
     try:
         img: Images = db.query(Images).filter(Images.id == imageid).first()
@@ -113,7 +114,7 @@ def get_video(
     pass
 
 
-@app.get("/qparams")
+@app.get("/qparams", response_model=PydanticGetQParams)
 def get_qparams(db=Depends(get_db)):
     try:
         camera_names = [
