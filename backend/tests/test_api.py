@@ -134,7 +134,7 @@ def test_params_get(create_test_env):
     assert resp.status_code == 200
 
 
-def test_params_get(create_test_env):
+def test_highlight_get(create_test_env):
     from ..app.app import app
 
     client = TestClient(app)
