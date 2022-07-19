@@ -21,21 +21,21 @@ image_list = [
 object_list = [
     [
         {
-            "score": 0.9,
+            "score": 0.4,
             "class_name": "person",
             "bbox": [0.1, 0.2, 0.1, 0.2],
         }
     ],
     [
         {
-            "score": 0.9,
+            "score": 0.5,
             "class_name": "dog",
             "bbox": [0.1, 0.2, 0.1, 0.2],
         }
     ],
     [
         {
-            "score": 0.9,
+            "score": 0.4,
             "class_name": "person",
             "bbox": [0.1, 0.2, 0.1, 0.2],
         },
@@ -112,6 +112,8 @@ def test_image_get(create_test_env):
     resp = client.get("/images?object=person")
     assert resp.status_code == 200
     assert len(resp.json()) == 2
+    assert resp.json()[0]["camera_name"] == "test"
+    assert resp.json()[1]["camera_name"] == "test1"
 
     # Except 1 items
     resp = client.get("/images?object=dog")
@@ -122,6 +124,12 @@ def test_image_get(create_test_env):
     resp = client.get("/images?object=dog&object=person")
     assert resp.status_code == 200
     assert len(resp.json()) == 3
+
+    # Except 3 items
+    resp = client.get("/images?score=0.5")
+    assert resp.status_code == 200
+    assert len(resp.json()) == 2
+    assert len(sum([img["detections"] for img in resp.json()], [])) == 2
 
 
 def test_params_get(create_test_env):

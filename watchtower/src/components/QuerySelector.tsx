@@ -10,6 +10,7 @@ import { updateQuery } from "../features/querySlice";
 import MultiSelect from "../elements/MultiSelect";
 import DateTimePicker from "../elements/CustomDateTimePicker";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import {
@@ -42,7 +43,7 @@ export default function QuerySelector() {
   return (
     <Container>
       <Grid container>
-        <Grid item xs={5}>
+        <Grid item xs={4}>
           <MultiSelect
             values={query.cameraNames}
             options={queryParams.cameraNames}
@@ -52,7 +53,7 @@ export default function QuerySelector() {
             }
           />
         </Grid>
-        <Grid item xs={5}>
+        <Grid item xs={4}>
           <MultiSelect
             values={query.objects}
             options={queryParams.objects}
@@ -73,6 +74,24 @@ export default function QuerySelector() {
               />
             }
             label="Only show highlighted"
+          />
+        </Grid>
+        <Grid item xs={2}>
+          <TextField
+            label="score"
+            inputProps={{ step: 0.1 }}
+            type="number"
+            value={query.score}
+            onChange={(event: any) =>
+              dispatch(
+                updateQuery({
+                  score: Math.max(Math.min(event.target.value, 1), 0),
+                })
+              )
+            }
+            InputLabelProps={{
+              shrink: true,
+            }}
           />
         </Grid>
         <Grid item xs={5}>

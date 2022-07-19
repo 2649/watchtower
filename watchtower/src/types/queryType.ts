@@ -4,6 +4,7 @@ export default interface queryOject {
   end: string;
   objects: string[];
   highlighted: boolean;
+  score: number;
 }
 
 export interface queryOjectOptional {
@@ -12,4 +13,5 @@ export interface queryOjectOptional {
   end?: string;
   objects?: string[];
   highlighted?: boolean;
+  score?: number;
 }

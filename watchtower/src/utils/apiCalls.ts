@@ -19,6 +19,7 @@ export const getImages = (query: queryOjectOptional) => {
   );
   parameterString += `start=${query.start}&`;
   parameterString += `end=${query.end}&`;
+  parameterString += `score=${query.score}&`;
   if (query.highlighted) {
     parameterString += "highlighted=true";
   }

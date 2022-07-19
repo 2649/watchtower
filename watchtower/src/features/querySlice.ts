@@ -9,6 +9,7 @@ const initialState: { values: queryOject } = {
     end: startOfToday().toISOString(),
     objects: [],
     highlighted: false,
+    score: 0.7,
   },
 };
 

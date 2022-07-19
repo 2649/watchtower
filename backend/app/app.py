@@ -41,6 +41,7 @@ def get_images(
     highlighted: Union[bool, None] = None,
     start: Union[datetime.datetime, None] = None,
     end: Union[datetime.datetime, None] = None,
+    score: float = 0,
     max_items: Union[int, None] = 500,
     db=Depends(get_db),
 ):
@@ -48,6 +49,8 @@ def get_images(
         result = db.query(Images)
         if object:
             result = result.join(Objects.image).filter(Objects.class_name.in_(object))
+        if score > 0:
+            result = result.join(Objects.image).filter(Objects.score >= score)
         if camera:
             result = result.filter(Images.camera_name.in_(camera))
         if start:
@@ -80,6 +83,7 @@ def get_images(
                             "bbox": det.bbox,
                         }
                         for det in row.objects
+                        if score >= det.score
                     ],
                 }
             )
