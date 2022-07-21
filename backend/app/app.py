@@ -83,7 +83,7 @@ def get_images(
                             "bbox": det.bbox,
                         }
                         for det in row.objects
-                        if score >= det.score
+                        if score <= det.score
                     ],
                 }
             )
