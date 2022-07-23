@@ -15,11 +15,11 @@ export const getImages = (query: queryOjectOptional) => {
     (cam: string) => (parameterString += `camera=${cam}&`)
   );
   query.objects?.forEach(
-    (obj: string) => (parameterString += `object=${obj}&`)
+    // Only add score, if objects are selected
+    (obj: string) => (parameterString += `object=${obj}&score=${query.score}&`)
   );
   parameterString += `start=${query.start}&`;
   parameterString += `end=${query.end}&`;
-  parameterString += `score=${query.score}&`;
   if (query.highlighted) {
     parameterString += "highlighted=true";
   }

@@ -1,3 +1,4 @@
+import Fab from "@mui/material/Fab";
 import Grid from "@mui/material/Grid";
 import Switch from "@mui/material/Switch";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
@@ -21,7 +22,7 @@ import {
   subDays,
   subHours,
 } from "date-fns";
-import { Container } from "@mui/system";
+import Container from "@mui/system/Container";
 import SearchIcon from "@mui/icons-material/Search";
 import { fetchQparams, fetchResults } from "../utils/apiExecution";
 
@@ -41,9 +42,9 @@ export default function QuerySelector() {
   }, [dispatch]);
 
   return (
-    <Container>
-      <Grid container>
-        <Grid item xs={4}>
+    <Container sx={{ position: "sticky", top: 0, height: "25vh", overflow: "scroll" }}>
+      <Grid container spacing={4}>
+        <Grid item xs={6}>
           <MultiSelect
             values={query.cameraNames}
             options={queryParams.cameraNames}
@@ -53,7 +54,7 @@ export default function QuerySelector() {
             }
           />
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={6}>
           <MultiSelect
             values={query.objects}
             options={queryParams.objects}
@@ -63,20 +64,23 @@ export default function QuerySelector() {
             }
           />
         </Grid>
-        <Grid item xs={2}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={query.highlighted}
-                onChange={() => {
-                  dispatch(updateQuery({ highlighted: !query.highlighted }));
-                }}
-              />
+        <Grid item xs={6}>
+          <DateTimePicker
+            value={query.start}
+            title="Start date"
+            onChange={(value: string) =>
+              dispatch(updateQuery({ start: value }))
             }
-            label="Only show highlighted"
           />
         </Grid>
-        <Grid item xs={2}>
+        <Grid item xs={6}>
+          <DateTimePicker
+            value={query.end}
+            title="End date"
+            onChange={(value: string) => dispatch(updateQuery({ end: value }))}
+          />
+        </Grid>
+        <Grid item xs={5}>
           <TextField
             label="score"
             inputProps={{ step: 0.1 }}
@@ -95,30 +99,27 @@ export default function QuerySelector() {
           />
         </Grid>
         <Grid item xs={5}>
-          <DateTimePicker
-            value={query.start}
-            title="Start date"
-            onChange={(value: string) =>
-              dispatch(updateQuery({ start: value }))
+          <FormControlLabel
+            control={
+              <Switch
+                checked={query.highlighted}
+                onChange={() => {
+                  dispatch(updateQuery({ highlighted: !query.highlighted }));
+                }}
+              />
             }
+            label="Only show highlighted"
           />
         </Grid>
-        <Grid item xs={5}>
-          <DateTimePicker
-            value={query.end}
-            title="End date"
-            onChange={(value: string) => dispatch(updateQuery({ end: value }))}
-          />
-        </Grid>
+
         <Grid item xs={2}>
-          <Button
-            size="large"
-            variant="contained"
+          <Fab
+            color="primary"
+            aria-label="search"
             onClick={() => fetchResults(dispatch, query)}
-            endIcon={<SearchIcon />}
           >
-            Search
-          </Button>
+            <SearchIcon />
+          </Fab>
         </Grid>
 
         <Grid item xs={12} sx={{ paddingTop: 3, paddingBottom: 3 }}>
@@ -126,6 +127,7 @@ export default function QuerySelector() {
             variant="contained"
             aria-label="fast-buttons-for-time-management"
             fullWidth
+            size="small"
           >
             <Button
               onClick={() => {
@@ -161,7 +163,7 @@ export default function QuerySelector() {
                 );
               }}
             >
-              Today
+              This Day
             </Button>
             <Button
               onClick={() => {
@@ -173,7 +175,7 @@ export default function QuerySelector() {
                 );
               }}
             >
-              Yesterday
+              Last Day
             </Button>
             <Button
               onClick={() => {

@@ -19,9 +19,11 @@ export default function CustomSnackbar() {
       open={snackbarState.level !== null}
       onClose={handleClose}
       autoHideDuration={snackbarState.time}
+      anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
     >
       <Alert
         severity={snackbarState.level !== null ? snackbarState.level : "info"}
+        onClose={handleClose}
       >
         {snackbarState.msg}
       </Alert>

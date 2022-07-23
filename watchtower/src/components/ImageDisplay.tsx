@@ -12,7 +12,7 @@ export default function ImageDisplay() {
   );
 
   const canvasWidth = window.innerWidth * 0.9;
-  const canvasHeight = window.innerHeight * 0.68;
+  const canvasHeight = window.innerHeight * 0.70;
   const [imageSize, setImageSize] = useState<number[] | null>(null);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
@@ -32,14 +32,14 @@ export default function ImageDisplay() {
         let newResizeSize;
         newResizeSize = [
           event?.currentTarget?.width *
-            (canvasHeight / event?.currentTarget?.height),
+          (canvasHeight / event?.currentTarget?.height),
           canvasHeight,
         ];
         if (newResizeSize[0] > canvasWidth) {
           newResizeSize = [
             canvasWidth,
             event?.currentTarget?.height *
-              (canvasWidth / event?.currentTarget?.width),
+            (canvasWidth / event?.currentTarget?.width),
           ];
         }
 
@@ -131,11 +131,11 @@ export default function ImageDisplay() {
   }
 
   function handleTouchEnd() {
-    if (touchStart - touchEnd > 150) {
+    if (touchStart - touchEnd > 75) {
       dispatch(updateSelectedByOne(1));
     }
 
-    if (touchStart - touchEnd < -150) {
+    if (touchStart - touchEnd < -75) {
       dispatch(updateSelectedByOne(-1));
     }
   }
@@ -146,6 +146,7 @@ export default function ImageDisplay() {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       style={{
+        paddingTop: 12,
         width: canvasWidth,
         height: canvasHeight,
         position: "relative",
@@ -158,13 +159,20 @@ export default function ImageDisplay() {
         ref={imageCanvas}
         width={canvasWidth}
         height={canvasHeight}
-        style={{ position: "absolute" }}
+        style={{
+          position: "absolute",
+
+
+        }}
       />
       <canvas
         ref={imageCanvas}
         width={canvasWidth}
         height={canvasHeight}
-        style={{ position: "absolute" }}
+        style={{
+          position: "absolute",
+
+        }}
       />
     </div>
   );

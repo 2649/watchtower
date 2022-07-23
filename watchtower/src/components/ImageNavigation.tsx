@@ -63,12 +63,14 @@ export default function ImageNavigation() {
   useEffect(() => {
     // Calculate marks
     try {
-      const divisor = Math.floor(detections.length / 4);
+      // Per 200 width, we increment the divisor
+      const divisor = Math.floor(detections.length / Math.floor(window.innerWidth / 200));
 
       const splits = detections
         .map((el: imageObject, idx: number) => {
           if (
-            (idx % divisor === 0 && idx) ||
+            (idx % divisor === 0 && idx &&
+              detections.length - idx > divisor) ||
             idx === detections.length - 1 ||
             idx === 0
           ) {
@@ -88,7 +90,7 @@ export default function ImageNavigation() {
       dispatch(
         updateSnackbar({
           msg: `Found ${detections.length} images for your query`,
-          time: 10000,
+          time: 6000,
           level: detections.length > 0 ? "success" : "warning",
         })
       );
@@ -138,7 +140,14 @@ export default function ImageNavigation() {
   };
 
   return (
-    <Container>
+    <Container
+      sx={{
+        position: "fixed",
+        bottom: 20,
+        left: "50%",
+        transform: "translateX(-50%)",
+      }}
+    >
       <Container sx={{ width: window.innerWidth * 0.8 }}>
         <Slider
           onChange={(event: any) => {
