@@ -32,6 +32,7 @@ services:
     build: ./backend
     environment:
       WATCHTOWER_SQL_CONNECTION: "postgresql://postgres:dbpw@postgres:5432/postgres"
+      #WATCHTOWER_LOG_LVL: DEBUG
     volumes:
       ###### Add here your local image path
       - "/media/laurenz/My Book/images:/images/"
