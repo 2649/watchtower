@@ -36,6 +36,7 @@ class ExecutionClass:
         self.cam_name = os.environ["WATCHTOWER_CAMERA_NAME"]
         self.model_path = os.environ["WATCHTOWER_MODEL_PATH"]
         self.inference_confidence = os.environ.get("WATCHTOWER_CONFIDENCE", 0.3)
+        self.jpg_compression = os.environ.get("WATCHTOWER_JPG_COMPRESSION", 80)
         logger.info("Retrieved all environment variables")
 
         self.image_list: List[dict] = []
@@ -97,7 +98,7 @@ class ExecutionClass:
         current_path = os.path.join(current_path_dir, f"{current_time.timestamp()}.jpg")
         pathlib.Path(current_path_dir).mkdir(exist_ok=True, parents=True)
         # Write
-        cv2.imwrite(current_path, frame)
+        cv2.imwrite(current_path, frame, [int(cv2.IMWRITE_JPEG_QUALITY), self.jpg_compression])
 
         # Inference
         objects = self.model.detect_objects(frame)
