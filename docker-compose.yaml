@@ -10,7 +10,7 @@ services:
       ##################### This connection string is used for mobotix devices
       WATCHTOWER_CAM_IP: http://<user>:<pw>@<ip-address>/control/faststream.jpg?stream=full&quality=80&fps=6&needlength
       #####################
-      WATCHTOWER_MODEL_PATH: /models/yolov6s_1280_704.onnx
+      WATCHTOWER_MODEL_PATH: /models/yolov6/models/yolov6s_1280_704.onnx
       WATCHTOWER_CONFIDENCE: .3
       WATCHTOWER_CAMERA_NAME: "test"
       WATCHTOWER_STORAGE_PATH: "/images/"

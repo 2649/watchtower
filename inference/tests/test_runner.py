@@ -46,7 +46,7 @@ def create_test_env():
 def create_environ():
     os.environ["WATCHTOWER_CAM_IP"] = "http://ffmpeg"
     os.environ["WATCHTOWER_MODEL_PATH"] = (
-        os.path.dirname(__file__) + "/yolov6s_1280_704.onnx"
+        os.path.dirname(__file__) + "/yolov6s_640_352.onnx"
     )
     os.environ["WATCHTOWER_CONFIDENCE"] = ".3"
     os.environ["WATCHTOWER_CAMERA_NAME"] = "test"
