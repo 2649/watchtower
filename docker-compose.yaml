@@ -14,6 +14,7 @@ services:
       WATCHTOWER_CONFIDENCE: .3
       WATCHTOWER_CAMERA_NAME: "test"
       WATCHTOWER_STORAGE_PATH: "/images/"
+      WATCHTOWER_FPS: 1
       WATCHTOWER_SQL_CONNECTION: "postgresql://postgres:dbpw@postgres:5432/postgres"
     restart: always
     depends_on:
