@@ -5,6 +5,7 @@ import datetime
 import pathlib
 import cv2
 import sys
+from queue import Empty, Full, Queue
 from sqlalchemy import insert
 from typing import List
 import logging
@@ -13,7 +14,7 @@ from .tables import Base, engine, Images, Objects
 from .YOLOv6 import YOLOv6
 
 logging.basicConfig(
-    level=os.environ.get("WATCHTOWER:LOG_LVL", "INFO"),
+    level=os.environ.get("WATCHTOWER_LOG_LVL", "INFO"),
     format="%(asctime)s | %(levelname)s | %(name)s | %(funcName)s | %(message)s",
     stream=sys.stdout,
     force=True,
@@ -35,12 +36,17 @@ class ExecutionClass:
         self.cam_ip = os.environ["WATCHTOWER_CAM_IP"]
         self.cam_name = os.environ["WATCHTOWER_CAMERA_NAME"]
         self.model_path = os.environ["WATCHTOWER_MODEL_PATH"]
-        self.inference_confidence = os.environ.get("WATCHTOWER_CONFIDENCE", 0.3)
-        self.jpg_compression = os.environ.get("WATCHTOWER_JPG_COMPRESSION", 80)
+        self.inference_confidence = float(os.environ.get("WATCHTOWER_CONFIDENCE", 0.3))
+        self.jpg_compression = int(os.environ.get("WATCHTOWER_JPG_COMPRESSION", 80))
+        self.fps = int(os.environ.get("WATCHTOWER_FPS", 1))
+
         logger.info("Retrieved all environment variables")
 
         self.image_list: List[dict] = []
         self.object_list: List[List[dict]] = []
+        # We calc a rolling mean and do a lot of insert / pop, which is O(1) in queues
+        self.time_per_frame_queue = Queue(maxsize=30)
+        self.sleep_between_frames = 0
 
         # Will be initialized by prepare_execution and prepare_db
         self.cap = None
@@ -116,6 +122,23 @@ class ExecutionClass:
         if self.NUM_PROCESS_TO_HIT_DB < len(self.image_list):
             self.insert_in_db()
 
+    def calc_sleep_between_frames(self):
+        divisor = self.time_per_frame_queue.qsize()
+        denominator = self.time_per_frame_queue.get()
+        while True:
+            try:
+                denominator += self.time_per_frame_queue.get(block=False)
+            except Empty:
+                break
+
+        fps_offset = 1/self.fps - denominator / divisor
+        if fps_offset >= 0:
+            logger.info(f"New fps offset: {fps_offset}")
+            self.sleep_between_frames = fps_offset
+        else:
+            logger.warning(f"Image retrieval and inference takes longer than specified FPS. It takes {denominator / divisor} seconds per image")
+            self.sleep_between_frames = 0
+
     def run(self):
         logger.info("Start of endless run")
         while self.running:
@@ -123,14 +146,16 @@ class ExecutionClass:
                 self.prepare_execution()
                 self.prepare_db()
                 failed_img_retrieval = 0
+                frames_since_fps_check = 1 #Start at 1, to avoid modulo begin 0 at first run
                 logger.info("Preparation finished")
                 while self.running:
                     try:
+                        start_time = time.time()
                         ret, frame = self.cap.read()
                         if ret:
                             self.process_frame(frame)
                             self.dump_eventually()
-                            time.sleep(0.01)
+                            time.sleep(0.001)
                         else:
                             self.insert_in_db()
                             failed_img_retrieval += 1
@@ -138,6 +163,19 @@ class ExecutionClass:
                                 raise ConnectionError(
                                     "Failed to retrieve one of 30 last frames"
                                 )
+                        
+                        # Handle FPS offset
+                        if frames_since_fps_check % 31 == 0:
+                            self.calc_sleep_between_frames()
+                            frames_since_fps_check = 1
+                        try:
+                            self.time_per_frame_queue.put(time.time()-start_time, block=False)
+                        except Full:
+                            logger.info("Queue is full")
+                        frames_since_fps_check += 1
+
+                        time.sleep(self.sleep_between_frames)
+
                     except KeyboardInterrupt:
                         self.running = False
                         try:
@@ -156,4 +194,4 @@ class ExecutionClass:
                     self.cap.release()
                     self.engine.dispose()
                 except:
-                    pass
+                    logger.exception("Failed to release connections")
