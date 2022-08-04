@@ -46,16 +46,28 @@ def create_test_env():
 def create_environ():
     os.environ["WATCHTOWER_CAM_IP"] = "http://ffmpeg"
     os.environ["WATCHTOWER_MODEL_PATH"] = (
-        os.path.dirname(__file__) + "/yolov6s_640_352.onnx"
+        os.path.dirname(__file__) + "/yolov6s_640_352_simplified.onnx"
     )
+    os.environ["WATCHTOWER_CLASS_MAP_PATH"] = (
+        os.path.dirname(__file__) + "/class_map.json"
+    )
+    os.environ["WATCHTOWER_MODEL_NAME"] = "yolov6"
+    os.environ["WATCHTOWER_BATCH_SIZE"] = "1"
     os.environ["WATCHTOWER_CONFIDENCE"] = ".3"
     os.environ["WATCHTOWER_CAMERA_NAME"] = "test"
+    os.environ["WATCHTOWER_LOG_LVL"] = "DEBUG"
     os.environ["WATCHTOWER_STORAGE_PATH"] = tempfile.gettempdir()
 
     os.environ[
         "WATCHTOWER_SQL_CONNECTION"
     ] = "postgresql://test:test@localhost:5432/postgres"
 
+@pytest.fixture(scope="function")
+def get_batched_model():
+    os.environ["WATCHTOWER_MODEL_PATH"] = (
+        os.path.dirname(__file__) + "/yolov6_cctv_640_640_bs_6.onnx"
+    )
+    os.environ["WATCHTOWER_BATCH_SIZE"] = "6"
 
 def test_class_creation(create_environ):
     from ..src.InferenceExecutor import ExecutionClass
@@ -112,7 +124,6 @@ def test_db_connection(create_environ, create_test_env):
     with exec_class.engine.connect() as conn:
         result = conn.execute(text("SELECT * FROM images"))
         assert len(result.fetchall()) >= 3
-
         result = conn.execute(text("SELECT * FROM objects"))
         assert len(result.fetchall()) >= 3
 
@@ -157,3 +168,21 @@ def test_inference_wo_objects(create_environ, create_test_env, create_temp_dir):
 
     assert len(exec_class.image_list) == 0
     assert len(exec_class.object_list) == 0
+
+def test_batch_inference(create_environ, create_test_env, create_temp_dir, get_batched_model):
+    from ..src.InferenceExecutor import ExecutionClass
+
+    exec_class = ExecutionClass()
+    exec_class.prepare_execution()
+    exec_class.prepare_db()
+
+    for _ in range(10):
+        exec_class.process_frame(np.zeros([1280, 720, 3], dtype=np.uint8))
+        exec_class.dump_eventually()
+
+    assert len(exec_class.image_list) == 10 -int(os.environ["WATCHTOWER_BATCH_SIZE"]) 
+    assert len(exec_class.object_list) == 0
+    assert os.path.isfile(exec_class.image_list[0]["path"])
+
+    exec_class.image_list[0]["time"]
+    exec_class.image_list[0]["camera_name"]
