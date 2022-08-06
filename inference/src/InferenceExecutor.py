@@ -283,9 +283,21 @@ class ExecutionClassYoloV6(ExecutionClass):
         return self.model.detect_objects(self.image_array_list)
 
 
-class ExecutionClassRedis(ExecutionClass):
+class ExecutionClassWoInference(ExecutionClass):
     def load_model(self):
-        logger.info(f"Found this redis: {self.config.model_name}")
+        logger.info(f"No model loaded, only image capture")
 
-    def inference(self):
+    def inferred_directly(self)->bool:
+        return False
+
+    def inference(self) -> None:
         pass
+
+    def dump_inference_results(self, conn: sqlalchemy.engine.Connection) -> None:
+        pass
+
+    def should_insert_in_db(self) -> bool:
+        self.config.num_images_to_hit_db == self.image_list
+
+    def should_inference(self) -> bool:
+        return False

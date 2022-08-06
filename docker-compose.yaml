@@ -18,7 +18,7 @@ services:
       WATCHTOWER_CLASS_MAP_PATH: /models/yolov6/coco_models/class_map.json
       WATCHTOWER_CONFIDENCE: .3
       WATCHTOWER_STORAGE_PATH: "/images/"
-      WATCHTOWER_MODEL_NAME: "YOLOv6"  # Yolov6 | http
+      WATCHTOWER_MODEL_NAME: "YOLOv6"  # Yolov6 | none
       WATCHTOWER_BATCH_SIZE: 6
       
       ### DB
