@@ -10,12 +10,28 @@ from sqlalchemy import insert
 image_list = [
     {
         "path": "/test",
+        "inferred": True,
         "time": datetime.datetime.now() - datetime.timedelta(days=1),
         "camera_name": "test",
     },
-    {"path": "/test", "time": datetime.datetime.now(), "camera_name": "test"},
-    {"path": "/test", "time": datetime.datetime.now(), "camera_name": "test1"},
-    {"path": "/test", "time": datetime.datetime.now(), "camera_name": "test3"},
+    {
+        "path": "/test",
+        "inferred": True,
+        "time": datetime.datetime.now(),
+        "camera_name": "test",
+    },
+    {
+        "path": "/test",
+        "inferred": True,
+        "time": datetime.datetime.now(),
+        "camera_name": "test1",
+    },
+    {
+        "path": "/test",
+        "inferred": False,
+        "time": datetime.datetime.now(),
+        "camera_name": "test3",
+    },
 ]
 
 object_list = [
@@ -150,3 +166,41 @@ def test_highlight_get(create_test_env):
     resp = client.put("/highlight/1?highlight=true")
 
     assert resp.status_code == 200
+
+
+def test_get_workload(create_test_env):
+    from ..app.app import app
+
+    client = TestClient(app)
+
+    resp = client.get("/workload")
+    print(resp.text)
+    assert resp.status_code == 200
+
+
+def test_post_workload(create_test_env):
+    from ..app.app import app
+
+    client = TestClient(app)
+
+    resp = client.post(
+        "/workload",
+        json=[
+            {
+                "score": 1,
+                "image_id": 1,
+                "time": datetime.datetime.now().isoformat(),
+                "class_name": "bulk_insert",
+                "bbox": [0, 0, 1, 1],
+            }
+            for el in range(3)
+        ],
+    )
+
+    print(resp.text)
+    assert resp.status_code == 200
+
+    resp = client.get("/images?object=bulk_insert")
+    print(resp.text)
+    assert resp.status_code == 200
+    assert resp.json().__len__() == 1

@@ -8,7 +8,13 @@ from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import RedirectResponse
 
-from .schemas import PydanticGetImages, PydanticGetQParams, PydanticPutHighlight
+from .schemas import (
+    PydanticGetImages,
+    PydanticGetQParams,
+    PydanticPutHighlight,
+    PydanticWorkloadGet,
+    PydanticWorkloadPost,
+)
 from .dependencies import get_db
 from .tables import Base, Images, Objects, engine
 
@@ -109,6 +115,39 @@ def put_image(imageid: int, highlight: bool, db=Depends(get_db)):
         raise HTTPException(500, str(e))
 
     return {"value": img.highlight}
+
+
+@app.get("/workload", response_model=List[PydanticWorkloadGet])
+def get_workload(num: int = 100, db=Depends(get_db)):
+    try:
+        result = (
+            db.query(Images)
+            .with_entities(Images.id, Images.path, Images.time)
+            .filter(Images.inferred == False)
+            .limit(num)
+            .all()
+        )
+        logger.debug(f"This is fetched: {result}")
+
+        return result
+    except Exception as e:
+        logger.exception("Failed  GET images")
+        raise HTTPException(500, str(e))
+
+
+@app.post("/workload")
+def post_workload(payload: List[PydanticWorkloadPost], db=Depends(get_db)):
+    try:
+        db.bulk_save_objects(
+            [Objects(**el.dict()) for el in payload]
+        )
+        db.commit()
+
+    except Exception as e:
+        logger.exception("Failed to insert payload")
+        raise HTTPException(500, str(e))
+
+    return "OK"
 
 
 @app.get("/video")

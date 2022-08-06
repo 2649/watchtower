@@ -1,4 +1,4 @@
-from .tables import SessionLocal
+from .tables import SessionLocal, engine
 
 
 def get_db():

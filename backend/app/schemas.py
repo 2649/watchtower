@@ -30,3 +30,19 @@ class PydanticPutHighlight(BaseModel):
 class PydanticGetQParams(BaseModel):
     cameraNames: List[str]
     objects: List[str]
+
+
+class PydanticWorkloadGet(BaseModel):
+    id: int
+    path: str
+    time: datetime.datetime
+
+    class Config:
+        orm = True
+    
+class PydanticWorkloadPost(BaseModel):
+    score: float
+    image_id: int
+    time: datetime.datetime
+    class_name: str
+    bbox: List[float]

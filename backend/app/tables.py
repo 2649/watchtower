@@ -20,6 +20,7 @@ class Images(Base):
     time = Column(TIMESTAMP, index=True)
     camera_name = Column(TEXT)
     highlight = Column(BOOLEAN, nullable=True)
+    inferred = Column(BOOLEAN, nullable=False)
 
     objects = relationship("Objects", back_populates="image")
 
