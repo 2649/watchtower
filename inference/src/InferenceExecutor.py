@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from multiprocessing.sharedctypes import Value
 import os
 import time
 import signal
@@ -8,11 +7,11 @@ import pathlib
 import cv2
 import sys
 from numpy import ndarray
-import requests
 from sqlalchemy import insert
 from typing import List
 import logging
-import requests
+
+import sqlalchemy
 
 
 from .tables import Base, engine, Images, Objects
@@ -26,15 +25,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class ExecutionClass:
-
+class ExecutionConfig:
     def __init__(self) -> None:
-
-        # System interrupt handle
-        self.running = True
-        signal.signal(signal.SIGINT, self.handle_int)
-        logger.info("Init of SIGINT call")
-
         # Camera and DB
         self.base_path = os.environ["WATCHTOWER_STORAGE_PATH"]
         self.SQLALCHEMY_DATABASE_URL = os.environ["WATCHTOWER_SQL_CONNECTION"]
@@ -57,11 +49,29 @@ class ExecutionClass:
         self.fps = int(os.environ.get("WATCHTOWER_FPS", 1))
         self.fps_in_hz = 1 / self.fps
 
+        self.print_config()
+
+    def print_config(self):
+        for key, val in self.__dict__.items():
+            logger.info(f"Parameter: {key}: {val}")
+
+
+class ExecutionClass:
+    def __init__(self) -> None:
+
+        self.config = ExecutionConfig()
+
+        # System interrupt handle
+        self.running = True
+        signal.signal(signal.SIGINT, self.handle_int)
+        logger.info("Init of SIGINT call")
+
         logger.info("Retrieved all environment variables")
 
-        # Init data variables
-        self.image_list: List[dict] = []
+        # The imag list stores images. It grows to the number of batch size
         self.image_array_list: List[ndarray] = []
+
+        self.image_list: List[dict] = []
         self.object_list: List[List[dict]] = []
 
         # Will be initialized by prepare_execution and prepare_db
@@ -70,30 +80,34 @@ class ExecutionClass:
         self.model_server = None
         self.engine = None
         self.Base = None
-        self.print_config()
+        self.inferred = self.inferred_directly()
         logger.info("End of init")
 
     @abstractmethod
-    def load_model(self):
+    def inferred_directly(self)->bool:
         pass
 
     @abstractmethod
-    def inference(self):
+    def load_model(self) -> None:
         pass
 
-    # Utils and loader
-    def print_config(self):
-        logger.info(f"Parameter: base_path: {self.base_path}")
-        logger.info(f"Parameter: cam_ip: {self.cam_ip}")
-        logger.info(f"Parameter: cam_name: {self.cam_name}")
-        logger.info(f"Parameter: model_name: {self.model_name}")
-        logger.info(f"Parameter: model_path: {self.model_path}")
-        logger.info(f"Parameter: class_map_path: {self.class_map_path}")
-        logger.info(f"Parameter: batch_size: {self.batch_size}")
-        logger.info(f"Parameter: inference_confidence: {self.inference_confidence}")
-        logger.info(f"Parameter: jpg_compression: {self.jpg_compression}")
-        logger.info(f"Parameter: fps: {self.fps}")
+    @abstractmethod
+    def inference(self) -> None:
+        pass
 
+    @abstractmethod
+    def dump_inference_results(self, conn: sqlalchemy.engine.Connection) -> None:
+        pass
+
+    @abstractmethod
+    def should_insert_in_db(self) -> bool:
+        pass
+
+    @abstractmethod
+    def should_inference(self) -> bool:
+        pass
+
+    # Util
     def handle_int(self, sig, frame):
         logger.info("SIGINT received")
         self.running = False
@@ -101,7 +115,7 @@ class ExecutionClass:
 
     def prepare_execution(self):
         logger.info("Init of video stream")
-        self.cap = cv2.VideoCapture(self.cam_ip)
+        self.cap = cv2.VideoCapture(self.config.cam_ip)
         self.load_model()
         logger.info("Init of model")
 
@@ -113,45 +127,44 @@ class ExecutionClass:
         self.Base.metadata.create_all(bind=engine)
         logger.info("All tables are created")
 
-    # Worker fuwatchtower-desktopnctions
+    # Worker functions
     def insert_in_db(self):
-        if len(self.image_list) > 0:
+        if self.should_insert_in_db():
+            logger.debug("Insert in db triggered")
             with self.engine.begin() as conn:
                 result = conn.execute(
                     insert(Images).returning(Images.id, Images.time),
                     self.image_list,
                 )
+                for idx, res in enumerate(result):
+                    self.image_list[idx]["id"] = res.id
 
-                insert_objects = []
-                for idx, row in enumerate(result):
-                    logger.debug(f"Processing idx: {idx} and row: {row}")
-                    logger.debug(f"We access this object list now: {self.object_list}")
-                    for obj in self.object_list[idx]:
-                        obj["image_id"] = row.id
-                        obj["time"] = row.time
-                        insert_objects.append(obj)
+                self.dump_inference_results(conn)
 
-                if len(insert_objects) > 0:
-                    conn.execute(insert(Objects), insert_objects)
             logger.info(f"Just pushed {len(self.image_list)} images to DB")
             self.image_list = []
-            self.object_list = []
+            
+        else:
+            logger.debug("Insert in db too early")
 
     def process_frame(self, frame):
         current_time = datetime.datetime.now()
-        current_path_dir = f"{self.base_path}/{self.cam_name}/{current_time.date()}-{current_time.hour}"
+        current_path_dir = f"{self.config.base_path}/{self.config.cam_name}/{current_time.date()}-{current_time.hour}"
         current_path = os.path.join(current_path_dir, f"{current_time.timestamp()}.jpg")
         pathlib.Path(current_path_dir).mkdir(exist_ok=True, parents=True)
         # Write
         cv2.imwrite(
-            current_path, frame, [int(cv2.IMWRITE_JPEG_QUALITY), self.jpg_compression]
+            current_path,
+            frame,
+            [int(cv2.IMWRITE_JPEG_QUALITY), self.config.jpg_compression],
         )
 
         self.image_list.append(
             {
                 "path": current_path,
                 "time": current_time,
-                "camera_name": self.cam_name,
+                "camera_name": self.config.cam_name,
+                "inferred": self.inferred
             }
         )
 
@@ -160,7 +173,7 @@ class ExecutionClass:
         self.inference_eventually()
 
     def inference_eventually(self):
-        if self.image_array_list.__len__() == self.batch_size:
+        if self.image_array_list.__len__() == self.config.batch_size:
             start_time = time.time()
             logger.debug("Started inference")
             objects = self.inference()
@@ -170,10 +183,6 @@ class ExecutionClass:
             self.image_array_list = []
 
             logger.info(f"Time for inference: {time.time() - start_time}")
-
-    def dump_eventually(self):
-        if len(self.object_list) == self.batch_size:
-            self.insert_in_db()
 
     def run(self):
         logger.info("Start of endless run")
@@ -190,7 +199,7 @@ class ExecutionClass:
                         if ret:
                             self.process_frame(frame)
                             if self.batch_size > 1:
-                                self.dump_eventually()
+                                self.insert_in_db()
                             time.sleep(0.001)
                         else:
                             failed_img_retrieval += 1
@@ -201,15 +210,15 @@ class ExecutionClass:
 
                         # Handle FPS offset
                         time_for_frame = time.time() - start_time
-                        if time_for_frame > self.fps_in_hz:
+                        if time_for_frame > self.config.fps_in_hz:
                             logger.warning(
-                                f"Time for processing was {time_for_frame}, but {self.fps_in_hz} is needed"
+                                f"Time for processing was {time_for_frame}, but {self.config.fps_in_hz} is needed"
                             )
                         else:
                             logger.debug(
-                                f"Time for processing was {time_for_frame}, but only {self.fps_in_hz} is needed. Sleep for {self.fps_in_hz - time_for_frame - .05}"
+                                f"Time for processing was {time_for_frame}, but only {self.config.fps_in_hz} is needed. Sleep for {self.config.fps_in_hz - time_for_frame - .05}"
                             )
-                            time.sleep(self.fps_in_hz - time_for_frame - 0.05)
+                            time.sleep(self.config.fps_in_hz - time_for_frame - 0.05)
 
                     except KeyboardInterrupt:
                         self.running = False
@@ -234,33 +243,49 @@ class ExecutionClass:
 
 class ExecutionClassYoloV6(ExecutionClass):
     def load_model(self):
-        logger.info(f"Loading the model with model name: {self.model_name}")
+        logger.info(f"Loading the model with model name: {self.config.model_name}")
 
         logger.info("Loading YOLOv6")
         from .models.YOLOv6 import YOLOv6
 
         logger.info("Imported YOLOv6 successfully")
         self.model = YOLOv6(
-            self.model_path,
-            self.class_map_path,
-            float(self.inference_confidence),
+            self.config.model_path,
+            self.config.class_map_path,
+            float(self.config.inference_confidence),
         )
+
+    def inferred_directly(self):
+        return True
+
+    def should_insert_in_db(self) -> bool:
+        logger.debug(f"Should insert: {self.config.num_images_to_hit_db} == {len(self.object_list)}")
+        return self.config.num_images_to_hit_db == len(self.object_list)
+
+    def should_inference(self) -> bool:
+        return self.image_list.__len__() == self.config.batch_size
+
+    def dump_inference_results(self, conn: sqlalchemy.engine.Connection) -> None:
+        insert_objects = []
+        for idx, row in enumerate(self.image_list):            
+            logger.debug(f"We access this object list now: {self.object_list}")
+            for obj in self.object_list[idx]:
+                obj["image_id"] = row["id"]
+                obj["time"] = row["time"]
+                insert_objects.append(obj)
+
+        if len(insert_objects) > 0:
+            conn.execute(insert(Objects), insert_objects)
+        self.object_list = []
+        return super().dump_inference_results(conn)
 
     def inference(self):
         return self.model.detect_objects(self.image_array_list)
 
 
-class ExecutionClassWeb(ExecutionClass):
+class ExecutionClassRedis(ExecutionClass):
     def load_model(self):
-        logger.info(f"Loading the model with model name: {self.model_name}")
-        # We use a requests session, bc it automatically sets keep-alive
-        self.model_server = requests.Session()
+        logger.info(f"Found this redis: {self.config.model_name}")
 
     def inference(self):
-        resp = self.model_server.get(self.model_path)
-        if resp.status_code == 200:
-            return resp.json()
-        else:
-            logger.warning(
-                f"Failed to execute inference: {resp.status_code} with error msg: {resp.text}"
-            )
+        pass

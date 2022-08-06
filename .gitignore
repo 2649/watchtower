@@ -3,7 +3,7 @@ docker-compose.secret.yaml
 .vscode
 *.venv
 *.venv-test
-
+*.pt
 
 # Python template #
 __pycache__/

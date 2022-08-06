@@ -62,6 +62,7 @@ def create_environ():
         "WATCHTOWER_SQL_CONNECTION"
     ] = "postgresql://test:test@localhost:5432/postgres"
 
+
 @pytest.fixture(scope="function")
 def get_batched_model():
     os.environ["WATCHTOWER_MODEL_PATH"] = (
@@ -69,25 +70,42 @@ def get_batched_model():
     )
     os.environ["WATCHTOWER_BATCH_SIZE"] = "6"
 
-def test_class_creation(create_environ):
-    from ..src.InferenceExecutor import ExecutionClass
 
-    exec_class = ExecutionClass()
+def test_class_creation(create_environ):
+    from ..src.InferenceExecutor import ExecutionClassYoloV6
+
+    exec_class = ExecutionClassYoloV6()
 
 
 def test_db_connection(create_environ, create_test_env):
-    from ..src.InferenceExecutor import ExecutionClass
+    from ..src.InferenceExecutor import ExecutionClassYoloV6
 
-    exec_class = ExecutionClass()
+    exec_class = ExecutionClassYoloV6()
 
     exec_class.prepare_db()
+    exec_class.config.num_images_to_hit_db = 3
 
     assert isinstance(exec_class.engine, Engine)
 
     exec_class.image_list = [
-        {"path": "/test", "time": datetime.now(), "camera_name": "test"},
-        {"path": "/test", "time": datetime.now(), "camera_name": "test"},
-        {"path": "/test", "time": datetime.now(), "camera_name": "test"},
+        {
+            "path": "/test",
+            "inferred": True,
+            "time": datetime.now(),
+            "camera_name": "test",
+        },
+        {
+            "path": "/test",
+            "inferred": True,
+            "time": datetime.now(),
+            "camera_name": "test",
+        },
+        {
+            "path": "/test",
+            "inferred": True,
+            "time": datetime.now(),
+            "camera_name": "test",
+        },
     ]
 
     exec_class.object_list = [
@@ -129,9 +147,10 @@ def test_db_connection(create_environ, create_test_env):
 
 
 def test_inference(create_environ, create_test_env, get_test_img, create_temp_dir):
-    from ..src.InferenceExecutor import ExecutionClass
+    from ..src.InferenceExecutor import ExecutionClassYoloV6
 
-    exec_class = ExecutionClass()
+    exec_class = ExecutionClassYoloV6()
+    exec_class.config.num_images_to_hit_db = 1
     exec_class.prepare_execution()
 
     exec_class.process_frame(get_test_img)
@@ -150,9 +169,10 @@ def test_inference(create_environ, create_test_env, get_test_img, create_temp_di
 
 
 def test_inference_wo_objects(create_environ, create_test_env, create_temp_dir):
-    from ..src.InferenceExecutor import ExecutionClass
+    from ..src.InferenceExecutor import ExecutionClassYoloV6
 
-    exec_class = ExecutionClass()
+    exec_class = ExecutionClassYoloV6()
+    exec_class.config.num_images_to_hit_db = 1
     exec_class.prepare_execution()
 
     exec_class.process_frame(np.zeros([1280, 720, 3], dtype=np.uint8))
@@ -169,18 +189,21 @@ def test_inference_wo_objects(create_environ, create_test_env, create_temp_dir):
     assert len(exec_class.image_list) == 0
     assert len(exec_class.object_list) == 0
 
-def test_batch_inference(create_environ, create_test_env, create_temp_dir, get_batched_model):
-    from ..src.InferenceExecutor import ExecutionClass
 
-    exec_class = ExecutionClass()
+def test_batch_inference(
+    create_environ, create_test_env, create_temp_dir, get_batched_model
+):
+    from ..src.InferenceExecutor import ExecutionClassYoloV6
+
+    exec_class = ExecutionClassYoloV6()
     exec_class.prepare_execution()
     exec_class.prepare_db()
 
     for _ in range(10):
         exec_class.process_frame(np.zeros([1280, 720, 3], dtype=np.uint8))
-        exec_class.dump_eventually()
+        exec_class.insert_in_db()
 
-    assert len(exec_class.image_list) == 10 -int(os.environ["WATCHTOWER_BATCH_SIZE"]) 
+    assert len(exec_class.image_list) == 10 - int(os.environ["WATCHTOWER_BATCH_SIZE"])
     assert len(exec_class.object_list) == 0
     assert os.path.isfile(exec_class.image_list[0]["path"])
 

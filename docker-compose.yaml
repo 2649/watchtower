@@ -7,14 +7,21 @@ services:
   runner1:
     build: ./inference
     environment:
-      ##################### This connection string is used for mobotix devices
+      ### Camera related
       WATCHTOWER_CAM_IP: http://<user>:<pw>@<ip-address>/control/faststream.jpg?stream=full&quality=80&fps=6&needlength
-      #####################
-      WATCHTOWER_MODEL_PATH: /models/yolov6/models/yolov6s_1280_704.onnx
-      WATCHTOWER_CONFIDENCE: .3
       WATCHTOWER_CAMERA_NAME: "test"
-      WATCHTOWER_STORAGE_PATH: "/images/"
       WATCHTOWER_FPS: 1
+      WATCHTOWER_JPG_COMPRESSION: 80
+      
+      ### Modle related
+      WATCHTOWER_MODEL_PATH: /models/yolov6/cctv_models/yolov6_cctv_640_640_bs_6.onnx
+      WATCHTOWER_CLASS_MAP_PATH: /models/yolov6/coco_models/class_map.json
+      WATCHTOWER_CONFIDENCE: .3
+      WATCHTOWER_STORAGE_PATH: "/images/"
+      WATCHTOWER_MODEL_NAME: "YOLOv6"  # Yolov6 | http
+      WATCHTOWER_BATCH_SIZE: 6
+      
+      ### DB
       WATCHTOWER_SQL_CONNECTION: "postgresql://postgres:dbpw@postgres:5432/postgres"
     restart: always
     depends_on:
