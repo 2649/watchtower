@@ -178,7 +178,7 @@ class ExecutionClass:
             logger.debug("Started inference")
             objects = self.inference()
             logger.debug(f"Inference results: {objects}")
-            self.object_list = objects
+            self.object_list = self.object_list + objects
             logger.debug(f"This is the object list: {objects}")
             self.image_array_list = []
 
@@ -198,8 +198,7 @@ class ExecutionClass:
                         ret, frame = self.cap.read()
                         if ret:
                             self.process_frame(frame)
-                            if self.config.batch_size > 1:
-                                self.insert_in_db()
+                            self.insert_in_db()
                             time.sleep(0.001)
                         else:
                             failed_img_retrieval += 1
@@ -297,7 +296,8 @@ class ExecutionClassWoInference(ExecutionClass):
         pass
 
     def should_insert_in_db(self) -> bool:
-        return self.config.num_images_to_hit_db == len(self.image_list)+
+        logger.debug(f"Image list len: {len(self.image_list)} Num to hit until db: {self.config.num_images_to_hit_db}")
+        return self.config.num_images_to_hit_db == len(self.image_list)
 
     def should_inference(self) -> bool:
         return False
