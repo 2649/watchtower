@@ -13,6 +13,6 @@ mkdir -p backend/watchtower
 
 cp -r watchtower/build/ backend/watchtower
 
-docker-compose build --no-cache
+docker-compose build
 
 docker-compose up -d
