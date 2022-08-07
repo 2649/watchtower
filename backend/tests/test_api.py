@@ -177,6 +177,11 @@ def test_get_workload(create_test_env):
     print(resp.text)
     assert resp.status_code == 200
 
+    resp = client.get("/workload")
+    print(resp.text)
+    assert resp.status_code == 200
+    assert len(resp.json()) == 0
+
 
 def test_post_workload(create_test_env):
     from ..app.app import app

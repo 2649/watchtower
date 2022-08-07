@@ -38,7 +38,7 @@ class PydanticWorkloadGet(BaseModel):
     time: datetime.datetime
 
     class Config:
-        orm = True
+        orm_mode = True
     
 class PydanticWorkloadPost(BaseModel):
     score: float

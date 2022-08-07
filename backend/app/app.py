@@ -2,7 +2,7 @@ import os
 import sys
 import datetime
 import logging
-from tkinter import Image
+from sqlalchemy.orm import Session
 from typing import List, Union
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
@@ -49,7 +49,7 @@ def get_images(
     end: Union[datetime.datetime, None] = None,
     score: float = 0,
     max_items: Union[int, None] = 500,
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
 ):
     try:
         result = db.query(Images)
@@ -103,7 +103,7 @@ def get_images(
 
 
 @app.put("/highlight/{imageid}", response_model=PydanticPutHighlight)
-def put_image(imageid: int, highlight: bool, db=Depends(get_db)):
+def put_image(imageid: int, highlight: bool, db: Session = Depends(get_db)):
     try:
         img: Images = db.query(Images).filter(Images.id == imageid).first()
         img.highlight = highlight
@@ -118,16 +118,17 @@ def put_image(imageid: int, highlight: bool, db=Depends(get_db)):
 
 
 @app.get("/workload", response_model=List[PydanticWorkloadGet])
-def get_workload(num: int = 100, db=Depends(get_db)):
+def get_workload(num: int = 100, db: Session = Depends(get_db)):
     try:
-        result = (
-            db.query(Images)
-            .with_entities(Images.id, Images.path, Images.time)
-            .filter(Images.inferred == False)
-            .limit(num)
-            .all()
-        )
+        result = db.query(Images).filter(Images.inferred == False).limit(num).all()
         logger.debug(f"This is fetched: {result}")
+
+        # Update status
+        for row in result:
+            row.inferred = True
+        logger.debug(f"Inferred status: {[el.inferred for el in result]}")
+        db.bulk_save_objects(result)
+        db.commit()
 
         return result
     except Exception as e:
@@ -136,11 +137,9 @@ def get_workload(num: int = 100, db=Depends(get_db)):
 
 
 @app.post("/workload")
-def post_workload(payload: List[PydanticWorkloadPost], db=Depends(get_db)):
+def post_workload(payload: List[PydanticWorkloadPost], db: Session = Depends(get_db)):
     try:
-        db.bulk_save_objects(
-            [Objects(**el.dict()) for el in payload]
-        )
+        db.bulk_save_objects([Objects(**el.dict()) for el in payload])
         db.commit()
 
     except Exception as e:
@@ -152,13 +151,16 @@ def post_workload(payload: List[PydanticWorkloadPost], db=Depends(get_db)):
 
 @app.get("/video")
 def get_video(
-    camera: str, start: datetime.datetime, end: datetime.datetime, db=Depends(get_db)
+    camera: str,
+    start: datetime.datetime,
+    end: datetime.datetime,
+    db: Session = Depends(get_db),
 ):
     pass
 
 
 @app.get("/qparams", response_model=PydanticGetQParams)
-def get_qparams(db=Depends(get_db)):
+def get_qparams(db: Session = Depends(get_db)):
     try:
         camera_names = [
             img.camera_name for img in db.query(Images.camera_name).distinct().all()
