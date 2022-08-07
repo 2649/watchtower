@@ -290,7 +290,7 @@ class ExecutionClassWoInference(ExecutionClass):
         return False
 
     def inference(self) -> None:
-        pass
+        return []
 
     def dump_inference_results(self, conn: sqlalchemy.engine.Connection) -> None:
         pass
