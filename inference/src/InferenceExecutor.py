@@ -297,7 +297,7 @@ class ExecutionClassWoInference(ExecutionClass):
         pass
 
     def should_insert_in_db(self) -> bool:
-        return self.config.num_images_to_hit_db == self.image_list
+        return self.config.num_images_to_hit_db == len(self.image_list)+
 
     def should_inference(self) -> bool:
         return False
