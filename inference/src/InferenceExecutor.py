@@ -198,7 +198,7 @@ class ExecutionClass:
                         ret, frame = self.cap.read()
                         if ret:
                             self.process_frame(frame)
-                            if self.batch_size > 1:
+                            if self.config.batch_size > 1:
                                 self.insert_in_db()
                             time.sleep(0.001)
                         else:
