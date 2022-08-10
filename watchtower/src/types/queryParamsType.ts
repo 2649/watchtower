@@ -1,9 +1,9 @@
 export default interface queryParams {
-  cameraNames: string[];
+  camera_names: string[];
   objects: string[];
 }
 
 export interface queryParamsOptional {
-  cameraNames?: string[];
+  camera_names?: string[];
   objects?: string[];
 }

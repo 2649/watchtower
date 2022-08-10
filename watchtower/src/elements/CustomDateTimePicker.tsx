@@ -15,10 +15,9 @@ export default function CustomDateTimePicker({
   onChange,
   title,
 }: dateTimePickerProps) {
-
   const renderInput = (props: MuiTextFieldProps) => {
-    return <TextField {...props} sx={{ width: "90%" }} />
-  }
+    return <TextField {...props} sx={{ width: "90%" }} />;
+  };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>

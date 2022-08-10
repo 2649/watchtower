@@ -1,5 +1,5 @@
 export default interface queryOject {
-  cameraNames: string[];
+  camera_names: string[];
   start: string;
   end: string;
   objects: string[];
@@ -8,7 +8,7 @@ export default interface queryOject {
 }
 
 export interface queryOjectOptional {
-  cameraNames?: string[];
+  camera_names?: string[];
   start?: string;
   end?: string;
   objects?: string[];

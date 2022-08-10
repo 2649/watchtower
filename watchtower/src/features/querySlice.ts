@@ -4,9 +4,9 @@ import queryOject, { queryOjectOptional } from "../types/queryType";
 
 const initialState: { values: queryOject } = {
   values: {
-    cameraNames: [],
-    start: new Date().toISOString(),
-    end: startOfToday().toISOString(),
+    camera_names: [],
+    start: startOfToday().toISOString(),
+    end: new Date().toISOString(),
     objects: [],
     highlighted: false,
     score: 0.7,

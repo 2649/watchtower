@@ -11,11 +11,13 @@ export const fetchQparams = (dispatch: any) => {
       console.log("Received query params");
       dispatch(updateQueryParams(resp.data));
       // Add person as default query if exist
-      if (
-        resp.data.objects.filter((el: string) => el === "person").length === 1
-      ) {
-        dispatch(updateQuery({ objects: ["person"] }));
-      }
+      dispatch(
+        updateQuery({
+          objects: resp.data.objects.filter(
+            (el: string) => el.toLowerCase() === "person"
+          ),
+        })
+      );
     })
     .catch((resp) => {
       console.log("Failed to GET query params");
@@ -29,11 +31,16 @@ export const fetchQparams = (dispatch: any) => {
     });
 };
 
-export const fetchResults = (dispatch: any, query: queryOject) => {
+export const fetchResults = (
+  dispatch: any,
+  query: queryOject,
+  callback = () => {}
+) => {
   getImages(query)
     .then((resp) => {
       console.log("Received data for images");
       dispatch(updateDetection(resp.data));
+      callback();
     })
     .catch((resp) => {
       console.log("Failed to get images");

@@ -1,7 +1,8 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import imageObject from "../types/imageType";
-
-const initialState: { values: imageObject[] } = {
+const initialState: {
+  values: imageObject[];
+} = {
   values: [],
 };
 

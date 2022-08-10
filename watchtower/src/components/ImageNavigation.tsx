@@ -2,7 +2,7 @@ import Slider from "@mui/material/Slider";
 import { Container } from "@mui/system";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { RootState } from "../app/store";
-import { updateSelected } from "../features/viewSlice";
+import { updateLocalCameraFilter, updateSelected } from "../features/viewSlice";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
 
@@ -15,15 +15,18 @@ import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import SkipNextIcon from "@mui/icons-material/SkipNext";
 import SkipPreviousIcon from "@mui/icons-material/SkipPrevious";
-import { putHighlight } from "../utils/apiCalls";
 import { updateSnackbar } from "../features/snackbarSlice";
-import { updateHighlightState } from "../features/detectionsSlice";
 import { useEffect, useState } from "react";
 
 import imageObject from "../types/imageType";
 import { updateQuery } from "../features/querySlice";
 import { intervalToDuration, sub } from "date-fns/esm";
 import { fetchResults } from "../utils/apiExecution";
+import {
+  updateSelectedByAmount,
+  updateHighlighted,
+} from "../utils/imageNavigationUtils";
+import { cameraFilterObject } from "../types/localDetectionsFilter";
 
 export default function ImageNavigation() {
   const detections = useAppSelector(
@@ -31,9 +34,13 @@ export default function ImageNavigation() {
   );
   const selected = useAppSelector((state: RootState) => state.view.selected);
   const query = useAppSelector((state: RootState) => state.query.values);
+  const queryParams = useAppSelector(
+    (state: RootState) => state.queryParams.values
+  );
   const dispatch = useAppDispatch();
 
   const [marks, setMarks] = useState<any>([]);
+  const localFilter = useAppSelector((state: RootState) => state.view.filter);
 
   const skipButton = (forward: boolean) => {
     let startTime = query.start;
@@ -64,13 +71,14 @@ export default function ImageNavigation() {
     // Calculate marks
     try {
       // Per 200 width, we increment the divisor
-      const divisor = Math.floor(detections.length / Math.floor(window.innerWidth / 200));
+      const divisor = Math.floor(
+        detections.length / Math.floor(window.innerWidth / 200)
+      );
 
       const splits = detections
         .map((el: imageObject, idx: number) => {
           if (
-            (idx % divisor === 0 && idx &&
-              detections.length - idx > divisor) ||
+            (idx % divisor === 0 && idx && detections.length - idx > divisor) ||
             idx === detections.length - 1 ||
             idx === 0
           ) {
@@ -101,23 +109,27 @@ export default function ImageNavigation() {
     }
   }, [detections, dispatch]);
 
-  const updateHighlighted = () => {
-    putHighlight(detections[selected])
-      .then((resp: any) => {
-        console.log("Successfully update highlight");
-        dispatch(updateHighlightState(selected));
-      })
-      .catch((resp: any) => {
-        console.log("Failed to update highlighted");
-        dispatch(
-          updateSnackbar({
-            msg: "Failed to update highlight",
-            time: 6000,
-            level: "error",
+  useEffect(() => {
+    const availableCameras =
+      query.camera_names.length === 0
+        ? queryParams.camera_names
+        : query.camera_names;
+    if (availableCameras) {
+      const notShownCameras = localFilter.cameras
+        .filter((el: cameraFilterObject) => !el.show)
+        .map((el: cameraFilterObject) => el.name);
+      dispatch(
+        updateLocalCameraFilter(
+          availableCameras.map((el: string) => {
+            return {
+              name: el,
+              show: !notShownCameras.includes(el),
+            };
           })
-        );
-      });
-  };
+        )
+      );
+    }
+  }, [queryParams, detections]);
 
   const getValueText = (value: number) => {
     if (value !== undefined && detections.length > 0) {
@@ -125,17 +137,6 @@ export default function ImageNavigation() {
       return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}(${date.getDate()}.${date.getMonth()})`;
     } else {
       return value;
-    }
-  };
-
-  const updateSelectedByAmount = (amount: number = 1) => {
-    let newSelected = selected + amount;
-    if (newSelected > detections.length - 1) {
-      dispatch(updateSelected(0));
-    } else if (newSelected < 0) {
-      dispatch(updateSelected(detections.length - 1));
-    } else {
-      dispatch(updateSelected(newSelected));
     }
   };
 
@@ -177,24 +178,50 @@ export default function ImageNavigation() {
         />
         <Button
           size="large"
-          onClick={() => updateSelectedByAmount(-10)}
+          onClick={() =>
+            updateSelectedByAmount(
+              -10,
+              dispatch,
+              selected,
+              detections,
+              localFilter
+            )
+          }
           startIcon={<KeyboardDoubleArrowLeftIcon />}
         />
         <Button
           size="large"
-          onClick={() => updateSelectedByAmount(-1)}
+          onClick={() =>
+            updateSelectedByAmount(
+              -1,
+              dispatch,
+              selected,
+              detections,
+              localFilter
+            )
+          }
           startIcon={<KeyboardArrowLeft />}
         />
         <Button
           size="large"
-          onClick={() => updateSelectedByAmount(0)}
+          onClick={() =>
+            updateSelectedByAmount(
+              0,
+              dispatch,
+              selected,
+              detections,
+              localFilter
+            )
+          }
           startIcon={<MovieCreationIcon />}
         >
           {" "}
         </Button>
         <Button
           size="large"
-          onClick={updateHighlighted}
+          onClick={() =>
+            updateHighlighted(dispatch, detections[selected], selected)
+          }
           startIcon={
             detections[selected]?.highlight ? <StarIcon /> : <StarBorderIcon />
           }
@@ -204,12 +231,28 @@ export default function ImageNavigation() {
 
         <Button
           size="large"
-          onClick={() => updateSelectedByAmount(1)}
+          onClick={() =>
+            updateSelectedByAmount(
+              1,
+              dispatch,
+              selected,
+              detections,
+              localFilter
+            )
+          }
           startIcon={<KeyboardArrowRight />}
         />
         <Button
           size="large"
-          onClick={() => updateSelectedByAmount(10)}
+          onClick={() =>
+            updateSelectedByAmount(
+              10,
+              dispatch,
+              selected,
+              detections,
+              localFilter
+            )
+          }
           startIcon={<KeyboardDoubleArrowRightIcon />}
         />
         <Button
@@ -217,6 +260,30 @@ export default function ImageNavigation() {
           onClick={() => skipButton(true)}
           startIcon={<SkipNextIcon />}
         />
+      </ButtonGroup>
+      <ButtonGroup
+        variant="contained"
+        aria-label="fast-buttons-for-time-management"
+        fullWidth
+      >
+        {localFilter.cameras.map((camera: cameraFilterObject) => (
+          <Button
+            variant={camera.show ? "contained" : "outlined"}
+            onClick={() => {
+              dispatch(
+                updateLocalCameraFilter(
+                  localFilter.cameras.map((el: cameraFilterObject) =>
+                    el.name === camera.name
+                      ? { name: el.name, show: !el.show }
+                      : el
+                  )
+                )
+              );
+            }}
+          >
+            {camera.name}
+          </Button>
+        ))}
       </ButtonGroup>
     </Container>
   );

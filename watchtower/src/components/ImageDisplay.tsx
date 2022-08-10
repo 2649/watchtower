@@ -1,45 +1,53 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { RootState } from "../app/store";
 import detectionObject from "../types/detectionType";
-import { updateSelectedByOne } from "../features/viewSlice";
+import Fab from "@mui/material/Fab";
+import CropSquareIcon from "@mui/icons-material/CropSquare";
+import CropFreeIcon from "@mui/icons-material/CropFree";
+import {
+  updateSelectedByAmount,
+  updateHighlighted,
+} from "../utils/imageNavigationUtils";
 
 export default function ImageDisplay() {
-  const dispatch = useAppDispatch();
   const selected = useAppSelector((state: RootState) => state.view.selected);
+  const localFilter = useAppSelector((state: RootState) => state.view.filter);
   const detections = useAppSelector(
     (state: RootState) => state.detections.values
   );
 
   const canvasWidth = window.innerWidth * 0.9;
-  const canvasHeight = window.innerHeight * 0.70;
+  const canvasHeight = window.innerHeight * 0.7;
   const [imageSize, setImageSize] = useState<number[] | null>(null);
-  const [touchStart, setTouchStart] = useState(0);
-  const [touchEnd, setTouchEnd] = useState(0);
+  const [showAnnots, setShowAnnots] = useState<boolean>(true);
+
+  const dispatch = useAppDispatch();
 
   const imageCanvas = useRef<HTMLCanvasElement>(
     document.createElement("canvas")
   );
 
+  // Draw image
   useEffect(() => {
+    const img = new Image();
     if (
       detections.length > 0 &&
       selected !== undefined &&
       imageCanvas !== null
     ) {
-      const img = new Image();
       img.onload = (event: any) => {
         let newResizeSize;
         newResizeSize = [
           event?.currentTarget?.width *
-          (canvasHeight / event?.currentTarget?.height),
+            (canvasHeight / event?.currentTarget?.height),
           canvasHeight,
         ];
         if (newResizeSize[0] > canvasWidth) {
           newResizeSize = [
             canvasWidth,
             event?.currentTarget?.height *
-            (canvasWidth / event?.currentTarget?.width),
+              (canvasWidth / event?.currentTarget?.width),
           ];
         }
 
@@ -65,14 +73,19 @@ export default function ImageDisplay() {
         );
       }
     }
-  }, [selected, detections, canvasWidth, canvasHeight]);
+    return () => {
+      img.src = "";
+    };
+  }, [selected, detections, canvasWidth, canvasHeight, showAnnots]);
 
+  // Draw annotations
   useEffect(() => {
     if (
       imageSize !== null &&
       detections.length > 0 &&
       selected !== undefined &&
-      imageCanvas !== null
+      imageCanvas !== null &&
+      showAnnots
     ) {
       const ctx = imageCanvas.current?.getContext("2d");
       //@ts-ignore
@@ -109,42 +122,25 @@ export default function ImageDisplay() {
           object.bbox[0] * imageSize[0]
         );
       });
-    } else {
-      if (imageCanvas !== null) {
-        const ctx = imageCanvas?.current.getContext("2d");
-        ctx?.clearRect(
-          0,
-          0,
-          imageCanvas.current.width,
-          imageCanvas.current.height
-        );
-      }
     }
-  }, [selected, detections, imageSize]);
+  }, [selected, detections, imageSize, showAnnots]);
 
-  function handleTouchStart(e: any) {
-    setTouchStart(e.targetTouches[0].clientX);
-  }
-
-  function handleTouchMove(e: any) {
-    setTouchEnd(e.targetTouches[0].clientX);
-  }
-
-  function handleTouchEnd() {
-    if (touchStart - touchEnd > 75) {
-      dispatch(updateSelectedByOne(1));
+  const handleKeyPress = (event: React.KeyboardEvent) => {
+    if (event.key === "ArrowRight") {
+      updateSelectedByAmount(1, dispatch, selected, detections, localFilter);
+    } else if (event.key === "ArrowLeft") {
+      updateSelectedByAmount(-1, dispatch, selected, detections, localFilter);
+    } else if (event.key === "PageUp") {
+      updateSelectedByAmount(10, dispatch, selected, detections, localFilter);
+    } else if (event.key === "PageDown") {
+      updateSelectedByAmount(-10, dispatch, selected, detections, localFilter);
+    } else if (event.key === " ") {
+      updateHighlighted(dispatch, detections[selected], selected);
     }
-
-    if (touchStart - touchEnd < -75) {
-      dispatch(updateSelectedByOne(-1));
-    }
-  }
+  };
 
   return (
     <div
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
       style={{
         paddingTop: 12,
         width: canvasWidth,
@@ -155,24 +151,22 @@ export default function ImageDisplay() {
         cursor: "pointer",
       }}
     >
+      <Fab
+        color="primary"
+        sx={{ position: "absolute", top: 16, right: 8 }}
+        onClick={() => setShowAnnots(!showAnnots)}
+      >
+        {showAnnots ? <CropSquareIcon /> : <CropFreeIcon />}
+      </Fab>
       <canvas
         ref={imageCanvas}
         width={canvasWidth}
         height={canvasHeight}
         style={{
           position: "absolute",
-
-
         }}
-      />
-      <canvas
-        ref={imageCanvas}
-        width={canvasWidth}
-        height={canvasHeight}
-        style={{
-          position: "absolute",
-
-        }}
+        onKeyDown={handleKeyPress}
+        contentEditable
       />
     </div>
   );

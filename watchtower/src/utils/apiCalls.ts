@@ -11,7 +11,7 @@ export const getQueryParams = () => {
 export const getImages = (query: queryOjectOptional) => {
   // Build url
   let parameterString = "?";
-  query.cameraNames?.forEach(
+  query.camera_names?.forEach(
     (cam: string) => (parameterString += `camera=${cam}&`)
   );
   query.objects?.forEach(

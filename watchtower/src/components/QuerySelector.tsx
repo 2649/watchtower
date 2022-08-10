@@ -3,7 +3,7 @@ import Grid from "@mui/material/Grid";
 import Switch from "@mui/material/Switch";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { queryParamsOptional } from "../types/queryParamsType";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import createDummyData from "../utils/dev_data";
 import queryOject from "../types/queryType";
 import { RootState } from "../app/store";
@@ -13,6 +13,7 @@ import DateTimePicker from "../elements/CustomDateTimePicker";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
+import CircularProgress from "@material-ui/core/CircularProgress";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import {
   endOfDay,
@@ -34,23 +35,30 @@ export default function QuerySelector() {
   const query: queryOject = useAppSelector(
     (state: RootState) => state.query.values
   );
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     createDummyData(dispatch);
-
     fetchQparams(dispatch);
+
+    setTimeout(() => {
+      setLoading(true);
+      fetchResults(dispatch, query, () => setLoading(false));
+    }, 1500);
   }, [dispatch]);
 
   return (
-    <Container sx={{ position: "sticky", top: 0, height: "25vh", overflow: "scroll" }}>
+    <Container
+      sx={{ position: "sticky", top: 0, height: "25vh", overflow: "scroll" }}
+    >
       <Grid container spacing={4}>
         <Grid item xs={6}>
           <MultiSelect
-            values={query.cameraNames}
-            options={queryParams.cameraNames}
+            values={query.camera_names}
+            options={queryParams.camera_names}
             title={"Camera"}
             onChange={(event: any) =>
-              dispatch(updateQuery({ cameraNames: event.target.value }))
+              dispatch(updateQuery({ camera_names: event.target.value }))
             }
           />
         </Grid>
@@ -116,9 +124,15 @@ export default function QuerySelector() {
           <Fab
             color="primary"
             aria-label="search"
-            onClick={() => fetchResults(dispatch, query)}
+            disabled={loading}
+            onClick={() => {
+              setLoading(true);
+              fetchResults(dispatch, query, () => {
+                setLoading(false);
+              });
+            }}
           >
-            <SearchIcon />
+            {loading ? <CircularProgress /> : <SearchIcon />}
           </Fab>
         </Grid>
 

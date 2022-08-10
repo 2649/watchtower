@@ -21,7 +21,7 @@ export default function MultiSelect({
     <FormControl sx={{ m: 1, width: "90%" }}>
       <InputLabel id="demo-multiple-name-label">{title}</InputLabel>
       <Select
-      size="small"
+        size="small"
         labelId={`${title}-name-label`}
         id={`${title}-name-label`}
         multiple
