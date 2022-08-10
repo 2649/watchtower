@@ -169,7 +169,7 @@ def get_qparams(db: Session = Depends(get_db)):
             obj.class_name for obj in db.query(Objects.class_name).distinct().all()
         ]
         logger.debug(f"Got these qparams: {camera_names}, {objects}")
-        return {"cameraNames": camera_names, "objects": objects}
+        return {"camera_names": camera_names, "objects": objects}
 
     except Exception as e:
         logger.exception("Failed to get query params from DB")

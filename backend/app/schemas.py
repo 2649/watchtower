@@ -28,7 +28,7 @@ class PydanticPutHighlight(BaseModel):
 
 # GET qparams
 class PydanticGetQParams(BaseModel):
-    cameraNames: List[str]
+    camera_names: List[str]
     objects: List[str]
 
 
