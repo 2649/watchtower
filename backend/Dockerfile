@@ -4,9 +4,12 @@ WORKDIR /app
 
 COPY requirements.txt __init__.py /app/
 
-RUN pip install -r requirements.txt
+ENV PIP_EXTRA_INDEX_URL=https://www.piwheels.org/simple
+
+RUN pip install -r requirements.txt &&\
+    pip install gunicorn
 
 COPY app /app/app
 COPY watchtower /watchtower
 
-CMD uvicorn app.app:app --host 0.0.0.0 --port 80
+CMD gunicorn app.app:app -w 3 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:80
