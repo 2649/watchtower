@@ -51,5 +51,6 @@ export const fetchResults = (
           level: "error",
         })
       );
+      callback();
     });
 };
