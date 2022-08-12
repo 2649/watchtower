@@ -22,7 +22,7 @@ class Images(Base):
     highlight = Column(BOOLEAN, nullable=True)
     inferred = Column(BOOLEAN, nullable=False)
 
-    objects = relationship("Objects", back_populates="image")
+    objects = relationship("Objects", back_populates="image", lazy="joined")
 
 
 class Objects(Base):
@@ -35,4 +35,4 @@ class Objects(Base):
     class_name = Column(TEXT)
     bbox = Column(ARRAY(FLOAT), nullable=False)
 
-    image = relationship("Images", back_populates="objects")
+    image = relationship("Images", back_populates="objects", lazy="joined")

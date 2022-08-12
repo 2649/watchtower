@@ -66,8 +66,10 @@ def get_images(
         if highlighted:
             result = result.filter(Images.highlight == highlighted)
 
+        result = result.order_by(Images.time.asc()).limit(max_items)
+
         logger.info(f"Came up with this query: {result.statement}")
-        result = result.order_by(Images.time.asc()).limit(max_items).all()
+        result = result.all()
         logger.debug(f"This is fetched: {result}")
 
         response = []

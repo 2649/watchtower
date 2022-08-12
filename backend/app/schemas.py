@@ -39,7 +39,8 @@ class PydanticWorkloadGet(BaseModel):
 
     class Config:
         orm_mode = True
-    
+
+
 class PydanticWorkloadPost(BaseModel):
     score: float
     image_id: int
