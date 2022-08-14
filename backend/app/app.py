@@ -2,7 +2,7 @@ import os
 import sys
 import datetime
 import logging
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, noload
 from typing import List, Union
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
@@ -107,7 +107,12 @@ def get_images(
 @app.put("/highlight/{imageid}", response_model=PydanticPutHighlight)
 def put_image(imageid: int, highlight: bool, db: Session = Depends(get_db)):
     try:
-        img: Images = db.query(Images).filter(Images.id == imageid).first()
+        img: Images = (
+            db.query(Images)
+            .options(noload(Images.objects))
+            .filter(Images.id == imageid)
+            .first()
+        )
         img.highlight = highlight
         db.commit()
         db.refresh(img)
@@ -122,7 +127,13 @@ def put_image(imageid: int, highlight: bool, db: Session = Depends(get_db)):
 @app.get("/workload", response_model=List[PydanticWorkloadGet])
 def get_workload(num: int = 100, db: Session = Depends(get_db)):
     try:
-        result = db.query(Images).filter(Images.inferred == False).limit(num).all()
+        result = (
+            db.query(Images)
+            .options(noload(Images.objects))
+            .filter(Images.inferred == False)
+            .limit(num)
+            .all()
+        )
         logger.debug(f"This is fetched: {result}")
 
         # Update status
